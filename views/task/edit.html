@@ -1,0 +1,161 @@
+<div class="row">
+<div class="span12">      		
+	   		
+	<div class="widget ">
+		<div class="widget-header">
+			<i class="icon-plus"></i>
+ 			<h3>编辑任务</h3>
+		</div> <!-- /widget-header -->
+
+		<div class="widget-content">
+		
+		<div class="alert alert-danger hide" role="alert"></div>
+
+		<form id="edit-task" action="{{urlfor "TaskController.Edit"}}" method="post" class="form-horizontal">
+			<input type="hidden" name="id" value="{{.task.Id}}" />
+            <input type="hidden" name="groupid" value="{{.groupid}}" />
+            <input type="hidden" name="task_name" value="{{.task_name}}" />
+            <fieldset>
+
+				<div class="control-group">
+					<label class="control-label" for="taskName">任务名称</label>
+					<div class="controls">
+						<input type="text" name="taskName" value="{{.task.TaskName}}" class="span6" id="taskName">
+					</div>				
+				</div>
+				
+				<div class="control-group">											
+					<label class="control-label" for="description">任务说明</label>
+					<div class="controls">
+						<textarea name="description" class="span6" id="description" rows="3">{{.task.Description}}</textarea>
+					</div> <!-- /controls -->				
+				</div> <!-- /control-group -->
+				
+				<div class="control-group">											
+					<label class="control-label" for="group_id">分组</label>
+					<div class="controls">
+						<select name="group_id" id="group_id">
+							<option value="0">未分组</option>
+							{{range $k, $v := .groups}}
+							<option value="{{$v.Id}}" {{if eq $v.Id $.task.GroupId}}selected{{end}}>{{$v.GroupName}}</option>
+							{{end}}
+						</select>
+					</div>				
+				</div>
+				
+				<div class="control-group">											
+					<label class="control-label">是否只允许一个实例</label>
+					<div class="controls">
+						<label class="radio inline">
+							<input type="radio" value="0" name="concurrent" {{if eq .task.Concurrent 0}}checked{{end}}> 是
+						</label>
+						<label class="radio inline">
+							<input type="radio" value="1" name="concurrent" {{if eq .task.Concurrent 1}}checked{{end}}> 否
+						</label>
+						<p class="help-block">设为“是”的话，如果该任务在上一个时间点还没执行完，则略过不执行</p>
+					</div>	<!-- /controls -->			
+				</div> <!-- /control-group -->
+				
+				<div class="control-group">											
+					<label class="control-label" for="cron_spec">cron表达式</label>
+					<div class="controls">
+						<input type="text" name="cron_spec" class="span6" id="cron_spec" value="{{.task.CronSpec}}">
+						<a href="{{urlfor "HelpController.Index"}}" target="_blank">参见使用帮助</a>
+					</div> <!-- /controls -->				
+				</div> <!-- /control-group -->
+				
+				<div class="control-group">											
+					<label class="control-label" for="command">命令脚本</label>
+					<div class="controls">
+						<textarea name="command" class="span6" id="command" rows="6">{{.task.Command}}</textarea>
+					</div> <!-- /controls -->				
+				</div> <!-- /control-group -->
+				
+				<div class="control-group">											
+					<label class="control-label" for="timeout">超时设置</label>
+					<div class="controls">
+						<input type="text" name="timeout" class="span1" id="timeout" value="{{.task.Timeout}}"> 秒
+						<span class="help-block">不设置的话，默认超时时间为1天</span>
+					</div> <!-- /controls -->				
+				</div> <!-- /control-group -->
+
+                <div class="control-group">
+                    <label class="control-label" for="timeout">自杀时间</label>
+                    <div class="controls">
+                        {{/*<input type="date" name="die_time" class="span2" id="die_time" value="{{.task.DieTime | date .T "Y-m-d H:i:s"}}">*/}}
+                        {{/*<input type="date" name="die_time" class="span2" id="die_time" value="{{dateformat .task.DieTime "2006-01-02"}}">*/}}
+                            {{if .task.DieTime}}
+                            <input type="datetime-local" name="die_time" class="span4" id="die_time" value="{{.task.DieTime | convertt}}">
+                                    {{else}}
+                                <input type="datetime-local" name="die_time" class="span4" id="die_time" value="">
+							{{end}}
+							</div> <!-- /controls -->
+                </div> <!-- /control-group -->
+				
+				<div class="control-group">											
+					<label class="control-label">邮件通知</label>
+					<div class="controls">
+						<label class="radio inline">
+							<input type="radio" value="0" name="notify" {{if eq .task.Notify 0}}checked{{end}}> 不通知
+						</label>
+						<label class="radio inline">
+							<input type="radio" value="1" name="notify" {{if eq .task.Notify 1}}checked{{end}}> 执行失败时通知
+						</label>
+						<label class="radio inline">
+							<input type="radio" value="2" name="notify" {{if eq .task.Notify 2}}checked{{end}}> 执行结束时通知
+						</label>
+					</div>	<!-- /controls -->			
+				</div> <!-- /control-group -->
+				
+				<div class="control-group notify_email {{if eq .task.Notify 0}}hide{{end}}">											
+					<label class="control-label" for="notify_email">通知邮件抄送人</label>
+					<div class="controls">
+						<textarea name="notify_email" class="span6" id="notify_email" rows="6">{{.task.NotifyEmail}}</textarea>
+						<p class="help-block">每行一个email地址，如果不需要抄送给其他人请留空</p>
+					</div> <!-- /controls -->				
+				</div> <!-- /control-group -->
+		
+				<br />
+				
+					
+				<div class="form-actions">
+					<button type="submit" class="btn btn-primary">保 存</button>
+					{{if or $.groupid $.task_name}}
+						<a href="{{urlfor "TaskController.List" "groupid" $.groupid "task_name" $.task_name }}" class="btn">返 回</a>
+					{{else}}
+						<a href="{{urlfor "TaskController.List"}}" class="btn">返 回</a>
+					{{end}}
+				</div> <!-- /form-actions -->
+			</fieldset>
+		</form>
+
+		</div>
+	</div>
+</div>
+</div>
+
+<script>
+$(function () {
+	$("form").submit(function () {
+		$(".alert").hide();
+		$("button[type='submit']").attr('disabled', true);
+		$.post('{{urlfor "TaskController.Edit"}}', $(this).serialize(), function (out) {
+			if (out.status == 0) {
+				window.location.href = '{{urlfor "TaskController.List" "groupid" $.groupid "task_name" $.task_name }}';
+			} else {
+				$(".alert").text(out.msg);
+				$(".alert").show();
+				$("button[type='submit']").attr('disabled', false);
+			}
+		}, "json");
+		return false;
+	});
+	$("input[name='notify']").click(function () {
+		if ($(this).val() > 0) {
+			$('.notify_email').removeClass('hide');
+		} else {
+			$('.notify_email').addClass('hide');
+		}
+	});
+});
+</script>

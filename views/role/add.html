@@ -1,0 +1,74 @@
+<div class="row">
+<div class="span12">      		
+	   		
+	<div class="widget ">
+		<div class="widget-header">
+			<i class="icon-plus"></i>
+ 			<h3>添加角色</h3>
+		</div> <!-- /widget-header -->
+
+		<div class="widget-content">
+		
+		<div class="alert alert-danger hide" role="alert"></div>
+
+		<form id="add-task" action="{{urlfor "RoleController.Add"}}" method="post" class="form-horizontal">
+			<fieldset>
+				
+				<div class="control-group">											
+					<label class="control-label" for="role_name">角色名</label>
+					<div class="controls">
+						<input type="text" name="role_name" class="span6" id="role_name">
+					</div>				
+				</div>
+				
+				<div class="control-group">											
+					<label class="control-label" for="description">说明</label>
+					<div class="controls">
+						<textarea name="description" class="span6" id="description" rows="6"></textarea>
+					</div> <!-- /controls -->				
+				</div> <!-- /control-group -->
+
+                <div class="control-group">
+                    <label class="control-label" for="group_id">角色规则</label>
+                    <div class="controls">
+					{{range $k, $v := .resourceList}}
+					{{$v.Name}}<input type="checkbox" name="resourceIds" value="{{$v.Id}}">
+
+                        &nbsp;&nbsp;&nbsp;
+					{{end}}
+                    </div>
+                </div>
+		
+				<br />
+				
+					
+				<div class="form-actions">
+					<button type="submit" class="btn btn-primary">保 存</button> 
+					<a href="{{urlfor "RoleController.List"}}" class="btn">返 回</a>
+				</div> <!-- /form-actions -->
+			</fieldset>
+		</form>
+
+		</div>
+	</div>
+</div>
+</div>
+
+<script>
+$(function () {
+	$("form").submit(function () {
+		$(".alert").hide();
+		$("button[type='submit']").attr('disabled', true);
+		$.post('{{urlfor "RoleController.Add"}}', $(this).serialize(), function (out) {
+			if (out.status == 0) {
+				window.location.href = '{{urlfor "RoleController.List"}}';
+			} else {
+				$(".alert").text(out.msg);
+				$(".alert").show();
+				$("button[type='submit']").attr('disabled', false);
+			}
+		}, "json");
+		return false;
+	});
+});
+</script>
