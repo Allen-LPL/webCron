@@ -46,6 +46,7 @@
 				<th width="40">ID</th>
 				<th>开始时间</th>
 				<th>执行时间</th>
+				<th>标题</th>
 				<th>输出</th>
 				<th class="span2">状态</th>
 				<th>操作</th>
@@ -58,6 +59,9 @@
 					<td class="center">{{$v.id}}</td>
 					<td>{{$v.start_time}}</td>
 					<td>{{$v.process_time}} 秒</td>
+					<td>
+						{{$v.title}}
+					</td>
 					<td>{{$v.ouput_size}}</td>
 					<td>
 					{{if eq $v.status 0}}

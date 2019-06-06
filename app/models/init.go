@@ -17,6 +17,8 @@ func Init() {
 	if dbport == "" {
 		dbport = "3306"
 	}
+	//dsn := dbuser + ":" + dbpassword + "@tcp(" + dbhost + ":" + dbport + ")/" + dbname + "?charset=utf8"
+	// 阿里云RDS链接
 	dsn := dbuser + ":" + dbpassword + "@tcp(" + dbhost + ":" + dbport + ")/" + dbname + "?charset=utf8"
 	if timezone != "" {
 		dsn = dsn + "&loc=" + url.QueryEscape(timezone)

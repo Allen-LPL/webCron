@@ -9,6 +9,7 @@ type TaskLog struct {
 	TaskId      int
 	Output      string
 	Error       string
+	Title 		string
 	Status      int
 	ProcessTime int
 	CreateTime  int64

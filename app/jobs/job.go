@@ -1,16 +1,18 @@
 package jobs
 
 import (
+	"bufio"
 	"bytes"
 	"fmt"
 	"github.com/astaxie/beego"
-	"webcron/app/mail"
-	"webcron/app/models"
 	"html/template"
+	"io"
 	"os/exec"
 	"runtime/debug"
 	"strings"
 	"time"
+	"webcron/app/mail"
+	"webcron/app/models"
 )
 
 var mailTpl *template.Template
@@ -70,8 +72,13 @@ func NewCommandJob(id int, name string, command string) *Job {
 		name: name,
 	}
 	job.runFunc = func(timeout time.Duration) (string, string, error, bool) {
+
 		bufOut := new(bytes.Buffer)
 		bufErr := new(bytes.Buffer)
+		//is := exec.Command("/bin/bash", "-c", "ps aux |grep 'ping 103.94.185.192'")
+		//is.Start()
+		//fmt.Println("Exit Code", is.ProcessState.Sys().(syscall.WaitStatus).ExitStatus())
+
 		cmd := exec.Command("/bin/bash", "-c", command)
 		cmd.Stdout = bufOut
 		cmd.Stderr = bufErr
@@ -100,7 +107,7 @@ func (j *Job) GetLogId() int64 {
 }
 
 func (j *Job) Run() {
-	beego.Error("发送邮件超时：", j.id)
+	//beego.Error("发送邮件超时：", j.id)
 	if j.task.DieTime > 0 && j.task.DieTime < time.Now().Unix() {
 		RemoveJob(j.id)
 		if task, err := models.TaskGetById(j.id); err == nil {
@@ -112,6 +119,7 @@ func (j *Job) Run() {
 	}
 
 	if !j.Concurrent && j.status > 0 {
+		println(fmt.Sprintf("任务[%d]上一次执行尚未结束，本次被忽略。", j.id))
 		beego.Warn(fmt.Sprintf("任务[%d]上一次执行尚未结束，本次被忽略。", j.id))
 		return
 	}
@@ -142,7 +150,33 @@ func (j *Job) Run() {
 		timeout = time.Second * time.Duration(j.task.Timeout)
 	}
 
+	// 执行命令之前先审查是否有相同的命令正在执行
+	errBool := isHaving(j.task.Command)
+	println(fmt.Sprintf("isHaving: %t", errBool))
+	if !errBool {
+		println(fmt.Sprintf("任务[%d]上一次执行的进程尚未结束，本次被忽略。", j.id))
+		beego.Warn(fmt.Sprintf("任务[%d]上一次执行尚未结束，本次被忽略。", j.id))
+		return
+	}
+
 	cmdOut, cmdErr, err, isTimeout := j.runFunc(timeout)
+	//if err == nil && cmdOut == "" && cmdErr == "" {
+	//	println(fmt.Sprintf("任务[%d]上一次执行的进程尚未结束，本次被忽略。", j.id))
+	//	beego.Warn(fmt.Sprintf("任务[%d]上一次执行尚未结束，本次被忽略。", j.id))
+	//	return
+	//}
+	//实时循环读取输出流中的一行内容
+
+	title := strings.Split(cmdOut, "\n")
+	//println(fmt.Sprintf("cmdOUt: %s", title[0]))
+	//reader := bufio.NewReader(cmdOut)
+	//for {
+	//	line, err2 := reader.ReadString('\n')
+	//	if err2 != nil || io.EOF == err2 {
+	//		break
+	//	}
+	//	fmt.Println(line)
+	//}
 
 	ut := time.Now().Sub(t) / time.Millisecond
 
@@ -153,6 +187,7 @@ func (j *Job) Run() {
 	log.Error = cmdErr
 	log.ProcessTime = int(ut)
 	log.CreateTime = t.Unix()
+	log.Title = title[0]
 
 	if isTimeout {
 		log.Status = models.TASK_TIMEOUT
@@ -207,4 +242,47 @@ func (j *Job) Run() {
 			beego.Error("发送邮件超时：", user.Email)
 		}
 	}
+
+}
+
+func isHaving(command string) bool {
+	// 判断是否正在执行
+	isHasCmd := exec.Command("/bin/sh", "-c", `ps -ef | grep -v "grep" | grep "`+command+`"`)
+	fmt.Println(`ps -ef | grep -v "grep" | grep "`+command+`"`)
+	out, err := isHasCmd.StdoutPipe()
+
+	if err != nil {
+		fmt.Println("StdoutPipe: " + err.Error())
+		return false
+	}
+
+	_, err = isHasCmd.StderrPipe()
+	if err != nil {
+		fmt.Println("StderrPipe: ", err.Error())
+		return false
+	}
+
+	if err := isHasCmd.Start(); err != nil {
+		fmt.Println("Start: ", err.Error())
+		return false
+	}
+
+	if err := isHasCmd.Wait(); err == nil {
+		fmt.Println("Wait: 已执行!")
+		return false
+	}
+
+	reader := bufio.NewReader(out)
+
+	//实时循环读取输出流中的一行内容
+	for {
+		line, err2 := reader.ReadString('\n')
+		if err2 != nil || io.EOF == err2 {
+			break
+		}
+		fmt.Println(line)
+	}
+
+
+	return true
 }

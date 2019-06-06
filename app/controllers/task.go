@@ -258,6 +258,7 @@ func (this *TaskController) Logs() {
 		row["process_time"] = float64(v.ProcessTime) / 1000
 		row["ouput_size"] = libs.SizeFormat(float64(len(v.Output)))
 		row["status"] = v.Status
+		row["title"] = v.Title
 		list[k] = row
 	}
 
